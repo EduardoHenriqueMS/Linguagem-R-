@@ -1,0 +1,150 @@
+---
+title: "Feirão de Renegociação"
+author: "Eduardo Henrique"
+output:
+ prettydoc::html_pretty:
+  theme: cayman
+  highlight: github
+  toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include=TRUE, warning=FALSE, message=FALSE)
+```
+
+
+```{r library}
+
+library(tidyverse)
+library(magrittr)
+library(readr)
+library(skimr)
+library(knitr)
+source("../Projeto Final/R/grafico.R")
+source("../Projeto Final/R/tema.R")
+```
+
+```{r base}
+
+base <- read.csv("../Projeto Final/data/base_credito.csv", sep = ";")
+
+base_ruim <- base %>%
+	filter(status == "ruim")
+```
+
+
+### Solução do problema
+##### Precisamos analisar detalhadamente o perfil das pessoas com status "RUIM" e desenvolver uma estratégia eficaz para oferecer algum tipo de benefício a esse grupo. Essas pessoas têm maior propensão a não quitarem suas dívidas, o que torna essencial a criação de incentivos que as motivem a regularizar sua situação financeira. Uma abordagem possível é conceder descontos específicos, que possam aliviar a carga financeira e, ao mesmo tempo, incentivá-las a pagar suas dívidas. Ao oferecer esse tipo de benefício, podemos aumentar as chances de recuperação do crédito e fortalecer a relação de confiança entre o cliente e a instituição.
+
+##### Além disso, devemos conceder um incentivo fiscal adicional para os clientes que possuem 10 anos ou mais de relacionamento com o banco, pois a fidelidade desses clientes é essencial para o nosso negócio. Como instituição financeira especializada em concessão de empréstimos, é crucial que mantenhamos um vínculo sólido com esses clientes de longa data. Para garantir essa fidelidade, podemos oferecer descontos específicos no pagamento das dívidas de empréstimos para esses clientes. Esse tipo de benefício não só demonstra o nosso reconhecimento pela lealdade deles ao longo dos anos, mas também facilita a regularização de suas obrigações financeiras, criando um ciclo de confiança e satisfação mútua. Ao conceder esses incentivos, incentivamos os clientes a manterem suas contas em dia, ao mesmo tempo em que reforçamos a imagem do banco como uma instituição que valoriza e recompensa a longevidade e a parceria de seus clientes.
+
+
+
+### Gráfico 1:
+##### Esse gráfico mostra a quantidade de pessoas que possuem o "Status" = "BOM" ou "RUIM", na base de dados de concessão de empréstimo.
+##### Devemos focar em conceder empréstimos para os clientes que possuem um "Status" = "RUIM"
+```{r grafico1}
+
+base %>%
+	group_by(status) %>%
+	summarise(
+		status_somatorio = n()
+	) %>%
+	grafico_status(dados=., coordenadax = status, coordenaday = status_somatorio) +
+	labs(x = "Status", y = "Quantidade Status", title = "Quantidade de Pessoas com status BOM e RUIM") +
+	tema_status()
+```
+
+##### Ao analisarmos detalhadamente, podemos estabelecer a quantidade de benefícios e descontos a serem concedidos aos clientes com base em seu histórico de relacionamento com a empresa. Fatores como o tempo de relacionamento, a existência de dívidas pendentes, e o valor total dos empréstimos adquiridos serão cruciais na definição da extensão dos benefícios oferecidos. Esses critérios permitirão personalizar as condições de acordo com o perfil de cada cliente, garantindo que os benefícios sejam alinhados ao seu histórico e ao seu compromisso com a empresa.
+
+### Gráfico 2:
+
+##### Esse gráfico mostra a quantidade de pessoas que possuem o "Status" = "RUIM" e se o cliente tem menos ou mais de 10 anos dentro da empresa.
+```{r grafico2}
+
+base_ruim %>%
+  mutate(
+    categoria_tempo = ifelse(tempo_empresa >= 10, ">= 10 anos", "< 10 anos")
+  ) %>%
+  count(categoria_tempo) %>%
+  ggplot() +
+  aes(x = categoria_tempo,
+      y = n,
+      fill = categoria_tempo) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c(">= 10 anos" = "darkblue", "< 10 anos" = "darkred")) +
+  tema() +
+	labs(x = "Tempo com a Empresa", title = "Quantidade de clientes recentes e antigos com status RUIM") +
+	geom_label(aes(x = categoria_tempo, y = n, label = n), color = "black", fill = "white")
+```
+
+### Gráfico 3:
+
+##### Esse gráfico mostra a quantidade de pessoas que possuem o "Status" = "RUIM", com dívidas e se o cliente tem menos ou mais de 10 anos dentro da empresa.
+
+```{r grafico3}
+
+base_ruim %>%
+	filter(dividas > 0) %>% 
+  mutate(
+    categoria_tempo = ifelse(tempo_empresa >= 10, ">= 10 anos", "< 10 anos")
+  ) %>%
+  count(categoria_tempo) %>%
+  ggplot() +
+  aes(x = categoria_tempo,
+      y = n,
+      fill = categoria_tempo) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c(">= 10 anos" = "darkblue", "< 10 anos" = "darkred")) +
+  tema() +
+	labs(x = "Tempo com a Empresa", title = "Quantidade de clientes recentes e antigos com status RUIM e com dividas") +
+	geom_label(aes(x = categoria_tempo, y = n, label = n), color = "black", fill = "white")
+```
+
+### Gráfico 4:
+
+##### Esse gráfico mostra a quantidade de pessoas que possuem o "Status" = "RUIM", com dívidas, um empréstimo maior ou igual a R$1000 e se o cliente tem menos ou mais de 10 anos dentro da empresa.
+```{r grafico4}
+
+base_ruim %>%
+	filter(dividas > 0 & valor_emprestimo >= 1000) %>% 
+  mutate(
+    categoria_tempo = ifelse(tempo_empresa >= 10, ">= 10 anos", "< 10 anos")
+  ) %>%
+  count(categoria_tempo) %>%
+  ggplot() +
+  aes(x = categoria_tempo,
+      y = n,
+      fill = categoria_tempo) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c(">= 10 anos" = "darkblue", "< 10 anos" = "darkred")) +
+  tema() +
+	labs(x = "Tempo com a Empresa", title = "Clientes com status RUIM, com dividas e emprestimo maior que 1000") +
+	geom_label(aes(x = categoria_tempo, y = n, label = n), color = "black", fill = "white")
+```
+
+
+### Gráfico 5:
+
+##### Esse gráfico mostra a quantidade de pessoas que possuem o "Status" = "RUIM", com dívidas, um empréstimo maior ou igual a R$2000 e se o cliente tem menos ou mais de 10 anos dentro da empresa.
+```{r grafico5}
+
+base_ruim %>%
+	filter(dividas > 0 & valor_emprestimo >= 2000) %>% 
+  mutate(
+    categoria_tempo = ifelse(tempo_empresa >= 10, ">= 10 anos", "< 10 anos")
+  ) %>%
+  count(categoria_tempo) %>%
+  ggplot() +
+  aes(x = categoria_tempo,
+      y = n,
+      fill = categoria_tempo) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c(">= 10 anos" = "darkblue", "< 10 anos" = "darkred")) +
+  tema() +
+	labs(x = "Tempo com a Empresa", title = "Clientes com status RUIM, com dividas e emprestimo maior que 2000") +
+	geom_label(aes(x = categoria_tempo, y = n, label = n), color = "black", fill = "white")
+```
+
+### Conclusão da Análise:
+##### Dessa forma, para o feirão de renegociação, poderemos ajustar os benefícios concedidos aos clientes com base na análise de seus perfis nos gráficos. Assim, garantiremos um atendimento personalizado, oferecendo condições adequadas às necessidades específicas de cada cliente.
